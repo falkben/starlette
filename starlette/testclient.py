@@ -14,7 +14,9 @@ from urllib.parse import unquote, urljoin, urlsplit
 
 import anyio.abc
 import requests
+from anyio import fail_after
 from anyio.streams.stapled import StapledObjectStream
+from urllib3.util.timeout import Timeout
 
 from starlette.types import Message, Receive, Scope, Send
 from starlette.websockets import WebSocketDisconnect
@@ -122,7 +124,11 @@ class _ASGIAdapter(requests.adapters.HTTPAdapter):
         self.portal_factory = portal_factory
 
     def send(
-        self, request: requests.PreparedRequest, *args: typing.Any, **kwargs: typing.Any
+        self,
+        request: requests.PreparedRequest,
+        *args: typing.Any,
+        timeout: Timeout = None,
+        **kwargs: typing.Any,
     ) -> requests.Response:
         scheme, netloc, path, query, fragment = (
             str(item) for item in urlsplit(request.url)
@@ -260,7 +266,16 @@ class _ASGIAdapter(requests.adapters.HTTPAdapter):
         try:
             with self.portal_factory() as portal:
                 response_complete = portal.call(anyio.Event)
-                portal.call(self.app, scope, receive, send)
+
+                if isinstance(timeout, tuple):
+                    err = (
+                        "Invalid timeout {}. testclient only supports float (not tuple)"
+                        "at this time ".format(timeout)
+                    )
+                    raise ValueError(err)
+
+                with fail_after(timeout):
+                    portal.call(self.app, scope, receive, send)
         except BaseException as exc:
             if self.raise_server_exceptions:
                 raise exc
