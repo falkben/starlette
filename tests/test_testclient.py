@@ -260,3 +260,17 @@ def test_timeout(test_client_factory, endpoint):
 
     response = client.get(endpoint)
     assert response.json() == {"mock": "slow example"}
+
+    client = test_client_factory(mock_service, raise_server_exceptions=False)
+
+    response = client.get(endpoint, timeout=(1, 1))
+    assert response.status_code == 500
+
+    response = client.get(endpoint, timeout=0.001)
+    assert response.status_code == 500
+
+    response = client.get(endpoint, timeout=1)
+    assert response.json() == {"mock": "slow example"}
+
+    response = client.get(endpoint)
+    assert response.json() == {"mock": "slow example"}

@@ -127,7 +127,7 @@ class _ASGIAdapter(requests.adapters.HTTPAdapter):
         self,
         request: requests.PreparedRequest,
         *args: typing.Any,
-        timeout: Timeout = None,
+        timeout: typing.Optional[Timeout] = None,
         **kwargs: typing.Any,
     ) -> requests.Response:
         scheme, netloc, path, query, fragment = (
