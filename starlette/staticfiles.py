@@ -48,7 +48,9 @@ class StaticFiles:
     ) -> None:
         self.directory = directory
         self.packages = packages
-        self.all_directories = self.get_directories(directory, packages)
+        self.all_directories = self.get_directories(
+            directory, packages, check_dir=check_dir
+        )
         self.html = html
         self.config_checked = False
         if check_dir and directory is not None and not os.path.isdir(directory):
@@ -60,6 +62,7 @@ class StaticFiles:
         packages: typing.Optional[
             typing.List[typing.Union[str, typing.Tuple[str, str]]]
         ] = None,
+        check_dir: bool = True,
     ) -> typing.List[PathLike]:
         """
         Given `directory` and `packages` arguments, return a list of all the
@@ -80,9 +83,10 @@ class StaticFiles:
             package_directory = os.path.normpath(
                 os.path.join(spec.origin, "..", statics_dir)
             )
-            assert os.path.isdir(
-                package_directory
-            ), f"Directory '{statics_dir!r}' in package {package!r} could not be found."
+            if check_dir:
+                assert os.path.isdir(
+                    package_directory
+                ), f"Directory '{statics_dir!r}' in package {package!r} could not be found."
             directories.append(package_directory)
 
         return directories

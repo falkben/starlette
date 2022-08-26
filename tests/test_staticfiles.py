@@ -75,6 +75,17 @@ def test_staticfiles_with_package(test_client_factory):
     assert response.status_code == 200
     assert response.text == "123\n"
 
+    with pytest.raises(AssertionError):
+        app = StaticFiles(packages=[("tests", "no_such_directory")])
+
+    app = StaticFiles(packages=[("tests", "no_such_directory")], check_dir=False)
+    client = test_client_factory(app)
+    with pytest.raises(HTTPException) as exc_info:
+        client.get("/example.txt")
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Not Found"
+
 
 def test_staticfiles_post(tmpdir, test_client_factory):
     path = os.path.join(tmpdir, "example.txt")
